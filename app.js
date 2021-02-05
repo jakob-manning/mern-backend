@@ -5,11 +5,7 @@ const placesRoutes = require('./routes/places-routes')
 const HttpError = require('./models/http-error')
 const userRoutes = require('./routes/users-routes')
 const mongoose = require("mongoose")
-
-const username = "backEnd"
-const password = "j5NctGCxSAdvayp4"
-const dbname = "productTest"
-const url = `mongodb+srv://${username}:${password}@cluster0.49781.mongodb.net/${dbname}?retryWrites=true&w=majority`
+const mongoURL = require("./hidden/mongoLogin")
 
 const app = express();
 
@@ -34,11 +30,10 @@ app.use((error, req, res, next) => {
     res.status(error.code || 500)
     res.json({message: error.message || "An unknown error occurred"});
 
-
 })
 
 mongoose
-    .connect(url)
+    .connect(mongoURL)
     .then( ()=> {
         app.listen(5000)
     })
