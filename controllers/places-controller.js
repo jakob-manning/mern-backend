@@ -122,7 +122,7 @@ const patchPlace = async (req, res, next) => {
         return next(new HttpError("Couldn't find a place for the provided id.", 404))
     }
 
-    res.status(200).json({placeData: place.toObject({getters: true})});
+    res.status(200).json({message:"place updated!", placeData: place.toObject({getters: true})});
 
 };
 

@@ -11,7 +11,7 @@ const getUsers = async (req, res,  next) => {
         console.log(e);
         return next(new HttpError("Something went wrong, couldn't find users.", 500))
     }
-
+    console.log(res)
     res.json({users: users.map(user => user.toObject({getters: true}))})
 };
 
@@ -39,7 +39,7 @@ const signup = async (req, res,  next) => {
     const newUser = new User({
         name,
         email,
-        image: "https://commons.wikimedia.org/wiki/File:Ranch_style_home_in_Salinas,_California.JPG",
+        image: "https://upload.wikimedia.org/wikipedia/commons/c/c9/Ranch_style_home_in_Salinas%2C_California.JPG",
         password,
         places: []
     })
@@ -71,7 +71,8 @@ const login = async (req, res,  next) => {
     if(user.password !== password){
         return next(new HttpError("Couldn't authenticate user, check email and password.", 401))
     }
-    res.json({message: "login successful!", token: "1091230918230932"});
+    console.log(res.header);
+    res.json({message: "login successful!", token: "1091230918230932", user: user.toObject({getters: true}) });
 
 };
 
