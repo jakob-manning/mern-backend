@@ -58,7 +58,7 @@ const DB_URI = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWO
 mongoose
     .connect(DB_URI)
     .then( ()=> {
-        app.listen(5000)
+        app.listen(process.env.PORT || 5000)
     })
     .catch( err => {
         console.log(err)
