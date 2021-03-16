@@ -1,3 +1,6 @@
+const fs = require("fs");
+const path = require("path")
+
 const express = require('express');
 const bodyParser = require('body-parser');
 
@@ -10,6 +13,8 @@ const mongoURL = require("./hidden/mongoLogin")
 const app = express();
 
 app.use(bodyParser.json())
+
+app.use("/uploads/images", express.static(path.join("uploads", "images")));
 
 app.use((req, res, next) => {
     /** Set CORS settings
@@ -34,6 +39,11 @@ app.use((req, res, next) => {
 //passing four parameters to express middleware tells it you are writing an error handling function
 //this code will execute if any above middleware has thrown an error
 app.use((error, req, res, next) => {
+    if(req.file){
+        fs.unlink(req.file.path, err => {
+            console.log(err);
+        })
+    }
     //check if a response has already been sent
     if( res.headerSent){
         return next(error);
@@ -43,8 +53,10 @@ app.use((error, req, res, next) => {
 
 })
 
+const DB_URI = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.49781.mongodb.net/${process.env.DB_NAME}?retryWrites=true&w=majority`
+
 mongoose
-    .connect(mongoURL)
+    .connect(DB_URI)
     .then( ()=> {
         app.listen(5000)
     })

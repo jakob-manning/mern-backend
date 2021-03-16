@@ -1,3 +1,5 @@
+const fs = require("fs")
+
 const HttpError = require("../models/http-error")
 const { v4: uuid } = require("uuid")
 const { validationResult } = require("express-validator")
@@ -50,7 +52,7 @@ const createPlace = async (req, res, next) => {
     if(!errors.isEmpty()){
         return next(new HttpError("Invalid inputs passed, please check your data.", 422))
     }
-    const { title, description, address, creator } = req.body;
+    const { title, description, address } = req.body;
 
     let coordinates
     try{
@@ -60,22 +62,28 @@ const createPlace = async (req, res, next) => {
         return next(error)
     }
 
+    let createdPlace;
 
-    const createdPlace = new Place(
-        {
-            title,
-            description,
-            address,
-            location: coordinates,
-            image: "https://commons.wikimedia.org/wiki/File:Ranch_style_home_in_Salinas,_California.JPG",
-            creator
-        }
-    )
+    try{
+        createdPlace = new Place(
+            {
+                title,
+                description,
+                address,
+                location: coordinates,
+                image: req.file.path,
+                creator: req.userData.userID
+            }
+        )
+    } catch (e) {
+        return next(e)
+    }
+
     console.log(createdPlace)
 
     let user;
     try {
-        user = await User.findById(creator);
+        user = await User.findById(req.userData.userID);
     } catch (e) {
         console.log(e);
         return next(new HttpError("Creating place failed, please try again.", 500))
@@ -111,8 +119,21 @@ const patchPlace = async (req, res, next) => {
     const { title, description } = req.body;
     let place
 
+    //pull up place in question
     try {
-        place = await Place.findOneAndUpdate(placeID, {title, description})
+        place = await Place.findById(placeID)
+    } catch (e) {
+        return next(new HttpError("Something went wrong, couldn't find that particular place.", 500))
+    }
+
+    //check that the current user has permission to edit this place
+    if(place.creator.value !== req.userData.userID.value){
+        return next(new HttpError("You're not authorized to edit this place." + place.creator + " "+ req.userData.userID, 401))
+    }
+
+    //make requested changes
+    try {
+        place = await Place.findByIdAndUpdate(placeID, {title, description})
     } catch (e) {
         console.log(e)
         return next(new HttpError("Something went wrong, couldn't find a place.", 500))
@@ -128,34 +149,43 @@ const patchPlace = async (req, res, next) => {
 
 const deletePlace = async (req, res, next) => {
     const placeID = req.params.pid;
-    let deletedPlace;
+    let placeToDelete;
 
     try {
-        deletedPlace = await Place.findById(placeID).populate('creator')
-        console.log(deletedPlace);
+        placeToDelete = await Place.findById(placeID).populate('creator')
+        console.log(placeToDelete);
         // deletedPlace = await Place.findByIdAndDelete(placeID);
     } catch (e) {
         console.log(e);
         return next(new HttpError("Something went wrong, couldn't delete place.", 500))
     }
 
-    if(!deletedPlace){
+    if(!placeToDelete){
         return next(new HttpError("Place could not be found, invalid place ID.", 404))
+    }
+
+    const imagePath = placeToDelete.image;
+
+    if(req.userData.userID !== placeToDelete.creator.id){
+        return next(new HttpError("Invalid User ID. You can only delete your own places.", 401))
     }
 
     try {
         const sess = await mongoose.startSession();
         sess.startTransaction();
-        await deletedPlace.remove( {session: sess});
-        deletedPlace.creator.places.pull(placeID);
-        await deletedPlace.creator.save({session: sess});
+        await placeToDelete.remove( {session: sess});
+        placeToDelete.creator.places.pull(placeID);
+        await placeToDelete.creator.save({session: sess});
+        await fs.unlink( imagePath, err => {
+            console.log(err);
+        })
         await sess.commitTransaction()
     } catch (e) {
         console.log(e);
         return next(new HttpError("Something went wrong, couldn't delete place.", 500))
     }
 
-    res.status(200).json({deletedPlaceID: placeID, deletedPlace: deletedPlace.toObject({getters: true})});
+    res.status(200).json({deletedPlaceID: placeID, deletedPlace: placeToDelete.toObject({getters: true})});
 };
 
 
