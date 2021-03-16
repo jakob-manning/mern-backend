@@ -31,6 +31,10 @@ app.use('/api/places', placesRoutes)
 
 app.use('/api/users', userRoutes)
 
+app.get('/', (req,res) => {
+    res.send("Hello World!")
+} )
+
 app.use((req, res, next) => {
     const error = new HttpError("couldn't find this route", 404)
     throw error;
