@@ -9,11 +9,11 @@ const HttpError = require('./models/http-error')
 const userRoutes = require('./routes/users-routes')
 const mongoose = require("mongoose")
 const mongoURL = require("./hidden/mongoLogin")
-
 const app = express();
 
-app.use(bodyParser.json())
+const PORT = process.env.PORT || 5000;
 
+app.use(bodyParser.json())
 app.use("/uploads/images", express.static(path.join("uploads", "images")));
 
 app.use((req, res, next) => {
@@ -62,7 +62,7 @@ const DB_URI = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWO
 mongoose
     .connect(DB_URI)
     .then( ()=> {
-        app.listen(process.env.PORT || 5000)
+        app.listen(PORT)
     })
     .catch( err => {
         console.log(err)
