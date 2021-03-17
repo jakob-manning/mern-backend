@@ -9,7 +9,6 @@ const placesRoutes = require('./routes/places-routes')
 const HttpError = require('./models/http-error')
 const userRoutes = require('./routes/users-routes')
 const mongoose = require("mongoose")
-const mongoURL = require("./hidden/mongoLogin")
 const app = express();
 
 const PORT = process.env.PORT || 5000;
